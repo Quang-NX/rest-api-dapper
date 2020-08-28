@@ -29,22 +29,53 @@ namespace WEBAPI_DAPPER.Controllers
                 {
                     connection.Open();
                 }
-                var result = await connection.QueryAsync<Product>("select Id,Sku,Price,DiscountPrice,ImageUrl,ViewCount,CreatedAt from Products", null, null, null, System.Data.CommandType.Text);
+                var result = await connection.QueryAsync<Product>("Get_Product_All", null, null, null, System.Data.CommandType.StoredProcedure);
                 return result;
             }
         }
 
         // GET api/<ProductController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
+        [HttpGet("{id}", Name = "Get")]
+        public async Task<Product> Get(int id)
         {
-            return "value";
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                {
+                    connection.Open();
+                }
+                var paramaters = new DynamicParameters();
+                paramaters.Add("@id", id);
+                var result = await connection.QueryAsync<Product>("Get_Product_By_Id", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+                return result.SingleOrDefault();
+            }
         }
 
         // POST api/<ProductController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<int> Post([FromBody] Product request)
         {
+            int newId = 0;
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                if (connection.State == System.Data.ConnectionState.Closed)
+                {
+                    connection.Open();
+                }
+                var paramaters = new DynamicParameters();
+
+                paramaters.Add("@sku", request.Sku);
+                paramaters.Add("@price", request.Price);
+                paramaters.Add("@discountPrice", request.DiscountPrice);
+                paramaters.Add("@isActive", request.IsActive);
+                paramaters.Add("@imageUrl", request.ImageUrl);
+                paramaters.Add("@id", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+
+                var result = await connection.ExecuteAsync("Create_Product", paramaters, null, null, System.Data.CommandType.StoredProcedure);
+
+                newId = paramaters.Get<int>("@id");
+            }
+            return newId;
         }
 
         // PUT api/<ProductController>/5

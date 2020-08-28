@@ -14,5 +14,6 @@ namespace WEBAPI_DAPPER.Model
         public DateTime CreatedAt { get; set; }
         public float? DiscountPrice { get; set; }
         public int ViewCount { get; set; }
+        public bool IsActive { get; set; }
     }
 }
